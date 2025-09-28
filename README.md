@@ -1,104 +1,134 @@
-# How to Run the Good Morning SMS Script
+# WhatsApp Message Bot 🤖💌
 
-This guide explains step by step how to run your `Good-Morning-SMS` script using Node.js, Baileys (WhatsApp), and OpenAI.
+This project automatically sends sweet **WhatsApp messages** at the right time of day using:
 
----
-
-## 1️⃣ Prerequisites
-
-Before running the script, make sure you have the following installed:
-
-* **Node.js** (v18+ recommended)
-* **npm** (comes with Node.js)
-* A valid **OpenAI API key**
-* WhatsApp account for sending messages
+- [Baileys](https://github.com/WhiskeySockets/Baileys) → WhatsApp Web API
+- [OpenAI API](https://platform.openai.com/) → AI-generated personalized messages
+- A lightweight JSON file (`example.json`) as a local database to track sent / unsent messages
 
 ---
 
-## 2️⃣ Install Dependencies
+## ✨ Features
+- Detects **morning** 🌞 or **evening** 🌙 and generates a fitting message
+- Uses **GPT-5** (with fallback to `gpt-4o-mini` if needed) to generate texts
+- Keeps track of used messages in `example.json`
+- Sends directly to your WhatsApp contact once connected
 
-Open your terminal in the project folder (where `package.json` is located) and run:
+---
+
+## 📦 Requirements
+- Node.js ≥ 18
+- An [OpenAI API key](https://platform.openai.com/api-keys)
+- A WhatsApp account (QR login required once)
+- `.env` file configured correctly
+
+---
+
+## ⚙️ Installation
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Create a `.env` file in the project root:
+
+   ```ini
+   OPENAI_API_KEY=your_openai_api_key_here
+   OPENAI_MODEL=gpt-5
+   RECIPIENT_PHONE=3069XXXXXXXX  # recipient's phone (without @s.whatsapp.net)
+   OPENAI_PROMPT_CONTEXT_SYSTEM=You are a sweet boyfriend writing WhatsApp messages
+   OPENAI_PROMPT_CONTEXT_USER=Write multiple short WhatsApp messages in Greek
+   ```
+
+3. Create `example.json` file with the structure:
+
+   ```json
+   [
+     {
+       "morning_messages": [],
+       "evening_messages": [],
+       "used_messages": []
+     }
+   ]
+   ```
+
+---
+
+## ▶️ Usage
+
+Run manually:
 
 ```bash
-npm install
+node index.js
 ```
 
-This will install all required packages:
-
-* `@whiskeysockets/baileys` (WhatsApp client)
-* `dotenv` (environment variables)
-* `openai` (OpenAI API client)
-* `qrcode-terminal` (for scanning QR codes)
-* `pino-pretty` (for readable logs)
+- On the first run, a **QR code** appears in the terminal → scan it with WhatsApp on your phone.
+- The bot will generate either a **morning** or **evening** message depending on the time, send it to your recipient, and then exit.
 
 ---
 
-## 3️⃣ Set Up Environment Variables
+## 🕒 Scheduling (optional)
 
-Your `.env` file should contain:
-
-```
-OPENAI_API_KEY=your_openai_api_key_here
-RECIPIENT_PHONE=your_recipient_phone_here
-```
-
-* Replace `your_openai_api_key_here` with your real OpenAI API key.
-* Replace `your_recipient_phone_here` with the recipient's phone number (including country code, no plus sign).
-
-Example:
-
-```
-OPENAI_API_KEY=sk-xxxxxx
-RECIPIENT_PHONE=3069xxxxxxxx
-```
-
----
-
-## 4️⃣ Run the Script
-
-In the terminal, run:
+### Linux / macOS with cron
+Run every day at 9 in the morning and at midnight:
 
 ```bash
-npm start
+crontab -e
 ```
 
-* This runs `node index.js | npx pino-pretty` (from your `package.json`), so logs will be human-readable.
-* The first time, the script will display a **QR code** in the terminal. Scan it with WhatsApp to log in.
-* Once logged in, the script will generate a message using OpenAI and send it to the recipient.
-
----
-
-## 5️⃣ Optional: Run with Custom Context
-
-By default, the script sends:
+Add this line:
 
 ```
-Say good morning in a sweet way in Greek
+0 0 * * * /usr/bin/node /path/to/index.js
+0 9 * * * /usr/bin/node /path/to/index.js
 ```
 
-You can provide a custom context by passing an argument:
+
+
+### Using PM2
+You can also use [PM2](https://pm2.keymetrics.io/) with cron:
 
 ```bash
-node index.js "Tell the recipient I love them in a funny way"
+pm2 start index.js --cron "0 0 * * *"
 ```
 
 ---
 
-## 6️⃣ Error Handling
+## 🗄 Database (`example.json`)
 
-* If OpenAI fails (e.g., rate limit exceeded), the script prints the error and exits.
-* If WhatsApp disconnects, the script logs the reason. For stream error 515, it will attempt to reconnect after 5 seconds.
+The bot uses a simple JSON file to manage messages:
+
+```json
+[
+  {
+    "morning_messages": [],
+    "evening_messages": [],
+    "used_messages": []
+  }
+]
+```
+
+- `morning_messages`: queue of unused morning messages
+- `evening_messages`: queue of unused evening messages
+- `used_messages`: archive of already sent messages
 
 ---
 
-## 7️⃣ Notes
+## 🛠 Debugging
+- If GPT-5 returns empty messages, the bot automatically retries with `gpt-4o-mini`.
+- Run with a custom context:
 
-* The `baileys_auth` folder stores WhatsApp session credentials so you don’t have to scan the QR code every time.
-* Make sure the recipient phone number is correct, including the country code (no plus `+`).
-* If you see human-readable logs with colors, everything is working as expected.
+  ```bash
+  node index.js "Say something specific"
+  ```
+
+Logs will print OpenAI responses to help debug.
 
 ---
 
-You’re ready to go! 🚀
-
-Scan the QR, run the script, and your sweet WhatsApp message will be sent automatically.
+## 📌 Notes
+- Don’t commit your `.env` file to GitHub (contains your API key).
+- The bot **exits after sending one message**. To automate daily runs, use cron or PM2.
+- Made for fun and personal automation — avoid spamming 🚫.
